@@ -1,0 +1,51 @@
+name: Build and Push Docker Image
+
+# Disparadores: push, manual
+on:
+  push:
+    branches:
+      - master
+      
+  workflow_dispatch:  # Disparar manualmente
+
+# Job de build e push da imagem
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_IMAGE_NAME: ${{ github.event.repository.name }}  # Nome da imagem baseado no repositório
+      DOCKER_TAG: 1.1.6  # Tag da imagem (ajustável)
+
+    steps:
+      # Fazer checkout do repositório
+      - name: Checkout the code
+        uses: actions/checkout@v3
+
+      # Logar no Docker Hub usando secrets
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # Exibir mensagem com o nome da imagem e a tag
+      - name: Show Docker Image and Tag
+        run: |
+          echo "Docker Image: ${{ env.DOCKER_IMAGE_NAME }}"
+          echo "Tag: ${{ env.DOCKER_TAG }}"
+          echo "Tag: latest"
+
+      # Construir a imagem Docker com o nome dinâmico do repositório
+      - name: Build Docker Image
+        run: |
+          # Build com a tag "latest"
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest .
+          # Build com a tag versionada (ex: 1.0.1)
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }} .
+
+
+      # Fazer push da imagem para o Docker Hub
+      - name: Push Docker Image
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }}
